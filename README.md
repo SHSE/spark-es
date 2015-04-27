@@ -21,10 +21,10 @@ val documents = sparkContext.esRDD(Seq("localhost"), "cluster1", Seq("index1"), 
 Read from ElasticSearch using `org.elasticsearch.action.search.SearchRequestBuilder`:
 
 ```Scala
-val query = QueryBuilders.termQuery("name", "john")
+def getQuery = QueryBuilders.termQuery("name", "john") // Define query as a function to avoid serializetion issues
 
 val documents = 
-  sparkContext.esRDD(Seq("localhost"), "SparkES", Seq("index1"), Seq("type1"), _.setQuery(query))
+  sparkContext.esRDD(Seq("localhost"), "SparkES", Seq("index1"), Seq("type1"), _.setQuery(getQuery))
 ```
 
 Save to ElasticSearch:
