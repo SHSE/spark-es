@@ -1,6 +1,8 @@
 name := "spark-es"
 
-version := "1.0"
+organization := "com.github.shse"
+
+version := "1.0.0"
 
 scalaVersion := "2.10.4"
 
