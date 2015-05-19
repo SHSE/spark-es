@@ -14,8 +14,6 @@ Add `spark-es` dependency to an SBT configuration file:
 
 ```SBT
 libraryDependencies += "com.github.shse" %% "spark-es" % "1.0.0"
-
-resolvers += Resolver.sonatypeRepo("releases")
 ```
 
 Read from ElasticSearch using `query_string` query:
