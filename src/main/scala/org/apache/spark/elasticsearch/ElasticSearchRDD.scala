@@ -9,7 +9,7 @@ import org.elasticsearch.client.Client
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.cluster.node.DiscoveryNode
 import org.elasticsearch.common.settings.ImmutableSettings
-import org.elasticsearch.common.transport.{InetSocketTransportAddress, TransportAddress}
+import org.elasticsearch.common.transport.{InetSocketTransportAddress, LocalTransportAddress, TransportAddress}
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.search.SearchHit
 
@@ -31,7 +31,7 @@ class ElasticSearchRDD(
   override def compute(split: Partition, context: TaskContext): Iterator[ESDocument] = {
     val partition = split.asInstanceOf[ElasticSearchPartition]
 
-    val client = getESClientByAddresses(List(partition.node.address()), clusterName)
+    val client = getESClientByAddresses(List(partition.node), clusterName)
 
     val requestBuilder = client.prepareSearch(indexNames: _*)
       .setTypes(typeNames: _*)
@@ -51,8 +51,14 @@ class ElasticSearchRDD(
     new DocumentIterator(scrollId, client, TimeValue.timeValueMillis(scrollDuration.toMillis))
   }
 
-  override protected def getPreferredLocations(split: Partition): Seq[String] =
-    Seq(split.asInstanceOf[ElasticSearchPartition].node.getHostAddress)
+  override protected def getPreferredLocations(split: Partition): Seq[String] = {
+    val endpoint = split.asInstanceOf[ElasticSearchPartition].node
+
+    endpoint match {
+      case SocketEndpoint(address, _) => Seq(address)
+      case _ => Seq.empty
+    }
+  }
 
   override protected def getPartitions: Array[Partition] = {
     val client = getESClient(nodes, clusterName)
@@ -80,9 +86,9 @@ class ElasticSearchRDD(
         .mapValues(_.map(_.currentNodeId()))
         .mapValues(nodeIds => nodeIds.map(state.getNodes.get))
         .iterator
-        .map { case (shardId, items) => (shardId.getIndex, shardId.getId, selectNode(items)) }
+        .map { case (shardId, items) => (shardId.getIndex, shardId.getId, transportAddressToEndpoint(selectNode(items).address())) }
         .zipWithIndex
-        .map { case ((indexName, shardId, nodeAddress), index) => new ElasticSearchPartition(id, index, indexName, nodeAddress, shardId) }
+        .map { case ((indexName, shardId, endpoint), index) => new ElasticSearchPartition(id, index, indexName, endpoint, shardId) }
         .map(_.asInstanceOf[Partition])
         .toArray
 
@@ -101,18 +107,34 @@ class ElasticSearchRDD(
 
 object ElasticSearchRDD {
   def getESClient(nodes: Seq[String], clusterName: String): Client = {
-    val addresses = nodes.map(_.split(':')).map {
-      case Array(host, port) => new InetSocketTransportAddress(host, port.toInt)
-      case Array(host) => new InetSocketTransportAddress(host, 9300)
+    val endpoints = nodes.map(_.split(':')).map {
+      case Array(host, port) => SocketEndpoint(host, port.toInt)
+      case Array(host) => SocketEndpoint(host, 9300)
     }
 
-    getESClientByAddresses(addresses, clusterName)
+    getESClientByAddresses(endpoints, clusterName)
   }
 
-  def getESClientByAddresses(addresses: Seq[TransportAddress], clusterName: String): TransportClient = {
+  def endpointToTransportAddress(endpoint: Endpoint): TransportAddress = endpoint match {
+    case LocalEndpoint(id) => new LocalTransportAddress(id)
+    case SocketEndpoint(address, port) => new InetSocketTransportAddress(address, port)
+  }
+
+  def transportAddressToEndpoint(address: TransportAddress): Endpoint = address match {
+    case socket: InetSocketTransportAddress =>
+      SocketEndpoint(socket.address().getHostName, socket.address().getPort)
+
+    case local: LocalTransportAddress => LocalEndpoint(local.id())
+
+    case _ => throw new RuntimeException("Unsupported transport address")
+  }
+
+  def getESClientByAddresses(endpoints: Seq[Endpoint], clusterName: String): TransportClient = {
     val settings = Map("cluster.name" -> clusterName)
     val esSettings = ImmutableSettings.settingsBuilder().put(settings.asJava).build()
     val client = new TransportClient(esSettings)
+
+    val addresses = endpoints.map(endpointToTransportAddress)
 
     client.addTransportAddresses(addresses: _*)
 
@@ -156,11 +178,17 @@ object ElasticSearchRDD {
     override def next(): ESDocument = batch.dequeue()
   }
 
+  sealed abstract class Endpoint
+
+  case class SocketEndpoint(address: String, port: Int) extends Endpoint
+
+  case class LocalEndpoint(id: String) extends Endpoint
+
   class ElasticSearchPartition(
     rddId: Int,
     override val index: Int,
     val indexName: String,
-    val node: DiscoveryNode,
+    val node: Endpoint,
     val shardId: Int) extends Partition {
     override def hashCode(): Int = 41 * (41 + rddId) + index
 
