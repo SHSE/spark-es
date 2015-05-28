@@ -13,7 +13,7 @@ ElasticSearch integration for Apache Spark.
 Add `spark-es` dependency to an SBT configuration file:
 
 ```SBT
-libraryDependencies += "com.github.shse" %% "spark-es" % "1.0.0"
+libraryDependencies += "com.github.shse" %% "spark-es" % "1.0.2"
 ```
 
 Read from ElasticSearch using `query_string` query:
