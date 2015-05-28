@@ -19,6 +19,8 @@ libraryDependencies += "com.github.shse" %% "spark-es" % "1.0.2"
 Read from ElasticSearch using `query_string` query:
 
 ```Scala
+import org.apache.spark.elasticsearch._
+
 val query = "name:john"
 
 val documents = sparkContext.esRDD(Seq("localhost"), "cluster1", Seq("index1"), Seq("type1"), query)
@@ -27,7 +29,9 @@ val documents = sparkContext.esRDD(Seq("localhost"), "cluster1", Seq("index1"), 
 Read from ElasticSearch using `org.elasticsearch.action.search.SearchRequestBuilder`:
 
 ```Scala
-def getQuery = QueryBuilders.termQuery("name", "john") // Define query as a function to avoid serializetion issues
+import org.apache.spark.elasticsearch._
+
+def getQuery = QueryBuilders.termQuery("name", "john") // Define query as a function to avoid serialization issues
 
 val documents = 
   sparkContext.esRDD(Seq("localhost"), "SparkES", Seq("index1"), Seq("type1"), _.setQuery(getQuery))
@@ -36,6 +40,8 @@ val documents =
 Save to ElasticSearch:
 
 ```Scala
+import org.apache.spark.elasticsearch._
+
 val documents = Seq(
   ESDocument(ESMetadata("1", "type1", "index1"), """{"name": "Sergey Shumov"}"""),
   ESDocument(ESMetadata("2", "type1", "index1"), """{"name": "John Smith"}""")
@@ -54,6 +60,7 @@ sparkContext
 Delete from ElasticSearch:
 
 ```Scala
+import org.apache.spark.elasticsearch._
 
 // Using metadata RDD
 val metadata = Seq(
@@ -76,6 +83,8 @@ sparkContext
 Custom bulk action:
 
 ```Scala
+import org.apache.spark.elasticsearch._
+se
 val items = Seq("type1" -> "1", "type2" -> "2")
 
 def handleResponse(response: BulkItemResponse): Unit =
