@@ -66,29 +66,34 @@ class ElasticSearchRDD(
     try {
       val state = client.admin().cluster().prepareState().get().getState
 
-      var partitionsByHost = Map.empty[DiscoveryNode, Int]
+      var partitionsByHost = Map.empty[String, Int]
 
-      def selectNode(nodes: Seq[DiscoveryNode]): DiscoveryNode = {
+      def selectNode(nodes: Array[DiscoveryNode]): DiscoveryNode = {
         val (selectedNode, assignedPartitionCount) = nodes
-          .map(node => node -> partitionsByHost.getOrElse(node, 0))
+          .map(node => node -> partitionsByHost.getOrElse(node.getId, 0))
           .sortBy { case (node, count) => count }
           .head
 
-        partitionsByHost += selectedNode -> (assignedPartitionCount + 1)
+        partitionsByHost += selectedNode.getId -> (assignedPartitionCount + 1)
 
         selectedNode
       }
 
-      val partitions = state.getRoutingTable
-        .allShards(indexNames: _*)
-        .asScala
-        .groupBy(_.shardId())
-        .mapValues(_.map(_.currentNodeId()))
-        .mapValues(nodeIds => nodeIds.map(state.getNodes.get))
+      val metadata = client.admin().cluster().prepareSearchShards(indexNames: _*).get()
+
+      val nodes = metadata.getNodes.map(node => node.getId -> node).toMap
+
+      val partitions = metadata.getGroups
+        .flatMap(group => group.getShards.map(group.getIndex -> _))
+        .map { case (index, shard) => (index, shard.getId) -> nodes(shard.currentNodeId) }
+        .groupBy { case (indexAndShard, _) => indexAndShard }
+        .mapValues(_.map(_._2))
+        .mapValues(selectNode)
         .iterator
-        .map { case (shardId, items) => (shardId.getIndex, shardId.getId, transportAddressToEndpoint(selectNode(items).address())) }
         .zipWithIndex
-        .map { case ((indexName, shardId, endpoint), index) => new ElasticSearchPartition(id, index, indexName, endpoint, shardId) }
+        .map { case (((indexName, shardId), node), index) =>
+          new ElasticSearchPartition(id, index, indexName, transportAddressToEndpoint(node.getAddress), shardId)
+        }
         .map(_.asInstanceOf[Partition])
         .toArray
 
