@@ -1,4 +1,4 @@
-# Spark ↔ ElasticSearch
+# Spark ↔ ElasticSearch [![Build Status](https://travis-ci.org/SHSE/spark-es.svg?branch=master)](https://travis-ci.org/SHSE/spark-es)
 ElasticSearch integration for Apache Spark.
 
 ## Features
