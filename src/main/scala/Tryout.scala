@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 import org.apache.commons.io.FileUtils
 import org.apache.spark.SparkContext
 import org.elasticsearch.common.settings.ImmutableSettings
@@ -8,7 +10,7 @@ object Tryout {
   def main(args: Array[String]): Unit = {
     val sparkContext = new SparkContext("local[2]", "SparkES")
 
-    val dataDir = FileUtils.getTempDirectory
+    val dataDir = Files.createTempDirectory("elasticsearch").toFile
 
     dataDir.deleteOnExit()
 
