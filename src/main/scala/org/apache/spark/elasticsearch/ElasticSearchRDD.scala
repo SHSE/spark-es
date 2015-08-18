@@ -64,8 +64,6 @@ class ElasticSearchRDD(
     val client = getESClient(nodes, clusterName)
 
     try {
-      val state = client.admin().cluster().prepareState().get().getState
-
       var partitionsByHost = Map.empty[String, Int]
 
       def selectNode(nodes: Array[DiscoveryNode]): DiscoveryNode = {
@@ -146,7 +144,7 @@ object ElasticSearchRDD {
     client
   }
 
-  class DocumentIterator(scrollId: String, client: Client, scrollDuration: TimeValue) extends Iterator[ESDocument] {
+  class DocumentIterator(var scrollId: String, client: Client, scrollDuration: TimeValue) extends Iterator[ESDocument] {
     private val batch = scala.collection.mutable.Queue.empty[ESDocument]
 
     def searchHitToDocument(hit: SearchHit): ESDocument = {
@@ -170,6 +168,8 @@ object ElasticSearchRDD {
       else {
         val response = client.prepareSearchScroll(scrollId).setScroll(scrollDuration).get()
         val hits = response.getHits.hits()
+
+        scrollId = response.getScrollId
 
         if (hits.isEmpty) {
           false

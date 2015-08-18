@@ -17,10 +17,9 @@ class Tests extends FunSuite with SparkSuite with ElasticSearchSuite {
       )
       .get()
 
-    client.prepareIndex(indexName, "foo", "1").setSource("{}").get()
-    client.prepareIndex(indexName, "foo", "2").setSource("{}").get()
-    client.prepareIndex(indexName, "foo", "3").setSource("{}").get()
-    client.prepareIndex(indexName, "foo", "4").setSource("{}").get()
+    for (i <- 1 to 1000) {
+      client.prepareIndex(indexName, "foo", i.toString).setSource("{}").get()
+    }
 
     client.admin().cluster().prepareHealth(indexName).setWaitForGreenStatus().get()
     client.admin().indices().prepareRefresh(indexName).get()
@@ -28,7 +27,7 @@ class Tests extends FunSuite with SparkSuite with ElasticSearchSuite {
     val rdd = sparkContext.esRDD(Seq("localhost"), es.clusterName, Seq(indexName), Seq("foo"), "*")
 
     assert(rdd.partitions.length == 2)
-    assert(rdd.collect().map(_.metadata.id).sorted.toList == List("1", "2", "3", "4"))
+    assert(rdd.collect().map(_.metadata.id).sorted.toList == (1 to 1000).map(_.toString).sorted.toList)
   }
 
   test("Writes documents to ElasticSearch") {
