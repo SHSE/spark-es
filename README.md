@@ -13,7 +13,7 @@ ElasticSearch integration for Apache Spark.
 Add `spark-es` dependency to an SBT configuration file:
 
 ```SBT
-libraryDependencies += "com.github.shse" %% "spark-es" % "1.0.3"
+libraryDependencies += "com.github.shse" %% "spark-es" % "1.0.4"
 ```
 
 Read from ElasticSearch using `query_string` query:
@@ -84,7 +84,7 @@ Custom bulk action:
 
 ```Scala
 import org.apache.spark.elasticsearch._
-se
+
 val items = Seq("type1" -> "1", "type2" -> "2")
 
 def handleResponse(response: BulkItemResponse): Unit =
