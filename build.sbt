@@ -2,13 +2,13 @@ name := "spark-es"
 
 organization := "com.github.shse"
 
-version := "1.0.4"
+version := "1.0.5"
 
 scalaVersion := "2.10.4"
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "1.4.1"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "1.5.2"
 
-libraryDependencies += "org.elasticsearch" % "elasticsearch" % "1.7.1"
+libraryDependencies += "org.elasticsearch" % "elasticsearch" % "2.1.0"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 

@@ -2,7 +2,7 @@ package org.apache.spark.elasticsearch
 
 import org.apache.spark.SparkContext
 import org.elasticsearch.action.search.SearchRequestBuilder
-import org.elasticsearch.index.query.{FilterBuilders, QueryBuilders}
+import org.elasticsearch.index.query.QueryBuilders
 
 object SparkOperations {
   def esRDD(
@@ -15,9 +15,7 @@ object SparkOperations {
     def setQuery(request: SearchRequestBuilder): Unit = {
       request.setQuery(
         QueryBuilders.constantScoreQuery(
-          FilterBuilders.queryFilter(
-            QueryBuilders.queryStringQuery(query)
-          ).cache(true)
+          QueryBuilders.queryStringQuery(query)
         )
       )
     }

@@ -29,7 +29,3 @@ trait ElasticSearchSuite extends Suite with BeforeAndAfterEach {
 }
 
 
-import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.{BeforeAndAfterEach, Suite}
-
-

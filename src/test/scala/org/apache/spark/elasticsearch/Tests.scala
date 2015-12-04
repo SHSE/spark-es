@@ -1,6 +1,6 @@
 package org.apache.spark.elasticsearch
 
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.scalatest.FunSuite
 
 class Tests extends FunSuite with SparkSuite with ElasticSearchSuite {
@@ -10,7 +10,7 @@ class Tests extends FunSuite with SparkSuite with ElasticSearchSuite {
     val indexName = "index-with-multiple-shards"
 
     client.admin().indices().prepareCreate(indexName)
-      .setSettings(ImmutableSettings.settingsBuilder()
+      .setSettings(Settings.settingsBuilder()
         .put("index.number_of_replicas", 0)
         .put("index.number_of_shards", 2)
         .build()

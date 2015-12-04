@@ -1,5 +1,6 @@
 package org.apache.spark.elasticsearch
 
+import java.net.{InetSocketAddress, InetAddress}
 import java.util.concurrent.TimeUnit
 
 import org.apache.spark.rdd.RDD
@@ -8,16 +9,17 @@ import org.elasticsearch.action.search.{SearchRequestBuilder, SearchType}
 import org.elasticsearch.client.Client
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.cluster.node.DiscoveryNode
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.{InetSocketTransportAddress, LocalTransportAddress, TransportAddress}
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.search.SearchHit
 
+import scala.annotation.meta.param
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
 class ElasticSearchRDD(
-  @transient sparkContext: SparkContext,
+  @(transient @param) sparkContext: SparkContext,
   nodes: Seq[String],
   clusterName: String,
   indexNames: Seq[String],
@@ -120,7 +122,7 @@ object ElasticSearchRDD {
 
   def endpointToTransportAddress(endpoint: Endpoint): TransportAddress = endpoint match {
     case LocalEndpoint(id) => new LocalTransportAddress(id)
-    case SocketEndpoint(address, port) => new InetSocketTransportAddress(address, port)
+    case SocketEndpoint(address, port) => new InetSocketTransportAddress(InetAddress.getByName(address), port)
   }
 
   def transportAddressToEndpoint(address: TransportAddress): Endpoint = address match {
@@ -134,8 +136,8 @@ object ElasticSearchRDD {
 
   def getESClientByAddresses(endpoints: Seq[Endpoint], clusterName: String): TransportClient = {
     val settings = Map("cluster.name" -> clusterName)
-    val esSettings = ImmutableSettings.settingsBuilder().put(settings.asJava).build()
-    val client = new TransportClient(esSettings)
+    val esSettings = Settings.settingsBuilder().put(settings.asJava).build()
+    val client = TransportClient.builder().settings(esSettings).build()
 
     val addresses = endpoints.map(endpointToTransportAddress)
 

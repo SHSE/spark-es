@@ -2,7 +2,7 @@ import java.nio.file.Files
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.SparkContext
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.node.NodeBuilder
 import org.apache.spark.elasticsearch._
 
@@ -14,12 +14,11 @@ object Tryout {
 
     dataDir.deleteOnExit()
 
-    val settings = ImmutableSettings.settingsBuilder()
+    val settings = Settings.settingsBuilder()
+      .put("path.home", dataDir.getAbsolutePath)
       .put("path.logs", s"${dataDir.getAbsolutePath}/logs")
       .put("path.data", s"${dataDir.getAbsolutePath}/data")
-      .put("index.store.type", "memory")
       .put("index.store.fs.memory.enabled", true)
-      .put("gateway.type", "none")
       .put("index.number_of_shards", 1)
       .put("index.number_of_replicas", 0)
       .put("cluster.name", "SparkES")
@@ -48,7 +47,7 @@ object Tryout {
     sparkContext.stop()
 
     client.close()
-    node.stop()
+
     node.close()
 
     FileUtils.deleteQuietly(dataDir)
