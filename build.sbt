@@ -2,13 +2,15 @@ name := "spark-es"
 
 organization := "com.github.shse"
 
-version := "1.0.7"
+publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
+
+version := "2.0.1"
 
 scalaVersion := "2.10.4"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "1.6.0" % "provided"
 
-libraryDependencies += ("org.elasticsearch" % "elasticsearch" % "2.2.0").exclude("joda-time", "joda-time")
+libraryDependencies += ("org.elasticsearch" % "elasticsearch" % "2.2.0").exclude("joda-time", "joda-time") % "provided"
 
 libraryDependencies += "joda-time" % "joda-time" % "2.8.2"
 

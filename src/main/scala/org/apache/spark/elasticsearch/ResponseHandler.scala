@@ -8,4 +8,4 @@ case object IgnoreFailure extends ResponseHandler
 
 case object ThrowExceptionOnFailure extends ResponseHandler
 
-case class CustomHandler(handler: BulkItemResponse => Unit) extends ResponseHandler
+case class CustomHandler[T](handler: (BulkItemResponse, T) => Unit) extends ResponseHandler

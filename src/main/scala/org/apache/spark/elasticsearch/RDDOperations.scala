@@ -11,7 +11,7 @@ object RDDOperations {
     nodes: Seq[String],
     clusterName: String,
     options: DeleteOptions): Unit = {
-    def handleResponse(response: BulkItemResponse): Unit = {
+    def handleResponse(response: BulkItemResponse, document: ESDocument): Unit = {
       if (response.isFailed && (response.getFailure.getStatus != RestStatus.NOT_FOUND || !options.ignoreMissing))
         throw new ElasticSearchBulkFailedException(response)
     }
@@ -84,18 +84,19 @@ object RDDOperations {
           for (document <- batch) {
             handleDocument(client, bulk, document)
           }
+          
 
           if (bulk.numberOfActions() > 0) {
             val response = bulk.get()
 
-            for (item <- response.getItems) {
+            for ((item, document) <- response.getItems.zip(batch)) {
               if (refreshIndices)
                 indices += item.getIndex
 
               handleResponse match {
                 case IgnoreFailure =>
                 case ThrowExceptionOnFailure => throw new ElasticSearchBulkFailedException(item)
-                case CustomHandler(handler) => handler(item)
+                case ch: CustomHandler[T] => ch.handler(item, document)
               }
             }
           }
@@ -124,7 +125,7 @@ object RDDOperations {
     nodes: Seq[String],
     clusterName: String,
     options: SaveOptions): Unit = {
-    def handleResponse(response: BulkItemResponse): Unit = {
+    def handleResponse(response: BulkItemResponse, document: ESDocument): Unit = {
       if (response.isFailed && (response.getFailure.getStatus != RestStatus.CONFLICT || !options.ignoreConflicts))
         throw new ElasticSearchBulkFailedException(response)
     }
