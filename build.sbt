@@ -2,8 +2,6 @@ name := "spark-es"
 
 organization := "com.github.shse"
 
-publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
-
 version := "2.0.1"
 
 scalaVersion := "2.10.4"
