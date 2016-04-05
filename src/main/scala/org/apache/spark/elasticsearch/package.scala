@@ -110,7 +110,8 @@ package object elasticsearch {
     routing: Option[String] = None,
     version: Option[Long] = None,
     parent: Option[String] = None,
-    timestamp: Option[String] = None)
+    timestamp: Option[String] = None,
+    fields: Option[Map[String, Array[AnyRef]]] = None)
 
   case class ElasticSearchResult(
     document: ESDocument,

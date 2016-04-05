@@ -158,7 +158,8 @@ object ElasticSearchRDD {
           None,
           Some(hit.getVersion),
           Option(hit.field("_parent")).map(_.getValue[String]),
-          Option(hit.field("_timestamp")).map(_.getValue[String])
+          Option(hit.field("_timestamp")).map(_.getValue[String]),
+          Option(hit.fields.asScala.mapValues(_.values().toArray).toMap)
         ),
         hit.getSourceAsString
       )
